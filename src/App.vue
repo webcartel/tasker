@@ -3,7 +3,9 @@
         <el-container>
             <el-aside></el-aside>
             <el-container>
-                <el-header></el-header>
+                <el-header>
+                    <countdown-timer/>
+                </el-header>
                 <el-main>
                     <router-view/>
                 </el-main>
@@ -16,8 +18,11 @@
 
 
 <script>
+import countdownTimer from '@/components/CountdownTimer.vue';
+
 export default {
-    name: 'App'
+    name: 'App',
+    components: { countdownTimer }
 }
 </script>
 

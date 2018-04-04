@@ -4,17 +4,22 @@
         <el-row>
 
             <el-col :span="12">
-              <el-card class="projects-card">
+                <el-card class="projects-card">
                   <div slot="header" class="clearfix projects-card-header">
                       <span>Проекты</span>
                       <el-button style="float: right; padding: 3px 0" type="text" @click="createProjectDialogVisible = true">Создать проект</el-button>
                   </div>
 
                   <div class="project-item" v-for="project in projectList">
-                      <span class="color" v-bind:style="{ background: project.projectColor }"></span>
-                      <span class="name">{{ project.projectName }}</span>
+                        <span class="color" v-bind:style="{ background: project.projectColor }"></span>
+                        <span class="name">{{ project.projectName }}</span>
+                        <el-button-group>
+                            <el-button icon="el-icon-tickets" plain></el-button>
+                            <el-button icon="el-icon-edit" plain></el-button>
+                            <el-button icon="el-icon-delete" plain></el-button>
+                        </el-button-group>
                   </div>
-              </el-card>
+                </el-card>
             </el-col>
 
             <el-col :span="12">
@@ -145,8 +150,9 @@ export default  {
         .project-item {
             display: flex;
             align-items: center;
-            padding: 15px 15px;
-            margin-bottom: 10px;
+            margin-bottom: 2px;
+            padding: 0px 15px;
+            min-height: 60px;
             background: #f5f5f5;
 
             .color {
@@ -160,6 +166,7 @@ export default  {
 
             .name {
                 display: inline-block;
+                margin: 0 auto 0 0;
                 font: 400 14px/21px 'Roboto', sans-serif;
                 vertical-align: middle;
             }

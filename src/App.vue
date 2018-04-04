@@ -4,7 +4,7 @@
             <el-aside></el-aside>
             <el-container>
                 <el-header>
-                    <countdown-timer/>
+                    <countdown-timer timestamp="110"/>
                 </el-header>
                 <el-main>
                     <router-view/>
@@ -22,7 +22,7 @@ import countdownTimer from '@/components/CountdownTimer.vue';
 
 export default {
     name: 'App',
-    components: { countdownTimer }
+    components: { countdownTimer },
 }
 </script>
 

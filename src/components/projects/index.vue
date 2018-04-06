@@ -58,13 +58,11 @@ export default  {
     props: [],
 
     mounted() {
-        this.setLocalStorage()
-        this.getProjectList()
+
     },
 
     data() {
         return {
-            storage: {},
             createProjectDialogVisible: false,
             projectNameInput: '',
             projectColorInput: '#eee',
@@ -77,7 +75,6 @@ export default  {
                 '#1e90ff',
                 '#c71585',
             ],
-            projectList: {},
         }
     },
 
@@ -87,18 +84,15 @@ export default  {
 
             let newId = this.newProjectId()
             let createTimestamp = new Date().getTime();
-            this.storage.projects.push( {projectId: newId, projectName: this.projectNameInput, projectColor: this.projectColorInput, createTimestamp: createTimestamp} )
-            localStorage.setItem('storage', JSON.stringify(this.storage))
-            this.getProjectList()
+            store.dispatch('createProject', {projectId: newId, projectName: this.projectNameInput, projectColor: this.projectColorInput, createTimestamp: createTimestamp})
+
             this.projectNameInput = ''
             this.projectColorInput = '#fff'
             this.createProjectDialogVisible = false
 
-            store.dispatch('createProject', {projectId: newId, projectName: this.projectNameInput, projectColor: this.projectColorInput, createTimestamp: createTimestamp})
         },
 
         newProjectId() {
-            this.getProjectList()
             if ( this.projectList.length === undefined ) {
                 return 1
             }
@@ -106,33 +100,12 @@ export default  {
                 return this.projectList.length + 1
             }
         },
-
-        getProjectList() {
-            this.projectList = this.getStorageLikeObject().projects
-        },
-
-        getStorageLikeObject() {
-            if ( localStorage.getItem('storage') ) {
-                return JSON.parse(localStorage.getItem('storage'))
-            }
-        },
-
-        setLocalStorage() {
-            let storage = {
-                projects: []
-            }
-            if ( !localStorage.getItem('storage') ) {
-                localStorage.setItem('storage', JSON.stringify(storage))
-                this.storage = storage
-            }
-            else {
-                this.storage = JSON.parse(localStorage.getItem('storage'))
-            }
-        }
     },
 
     computed: {
-
+        projectList() {
+            return store.state.projects;
+        }
     }
 }
 

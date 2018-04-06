@@ -9,14 +9,18 @@ const store = new Vuex.Store({
 	},
 
 	mutations: {
-		set( state, { type, items } ) {
-			state[type] = items
+		set( state, { type, item } ) {
+			state.projects.push(item)
+		},
+
+		delete( state, { itemId } ) {
+
 		}
 	},
 
 	actions: {
 		createProject({ commit }, projectData) {
-			commit('set', { type: 'projects', items: projectData })
+			commit('set', { type: 'projects', item: projectData })
 		}
 	},
 })

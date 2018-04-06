@@ -50,6 +50,7 @@
 
 
 <script lang="js">
+import store from '../../store/index.js'
 
 export default  {
     name: 'projects',
@@ -92,6 +93,8 @@ export default  {
             this.projectNameInput = ''
             this.projectColorInput = '#fff'
             this.createProjectDialogVisible = false
+
+            store.dispatch('createProject', {projectId: newId, projectName: this.projectNameInput, projectColor: this.projectColorInput, createTimestamp: createTimestamp})
         },
 
         newProjectId() {

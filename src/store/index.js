@@ -14,13 +14,18 @@ const store = new Vuex.Store({
 		},
 
 		delete( state, { itemId } ) {
-
+			let indexToRemove = state.projects.findIndex(obj => obj.projectId == itemId)
+			state.projects.splice(indexToRemove , 1)
 		}
 	},
 
 	actions: {
 		createProject({ commit }, projectData) {
 			commit('set', { type: 'projects', item: projectData })
+		},
+
+		deleteProject({ commit }, projectId) {
+			commit('delete', { itemId: projectId })
 		}
 	},
 })

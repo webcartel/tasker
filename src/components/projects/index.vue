@@ -16,7 +16,7 @@
                         <el-button-group>
                             <el-button icon="el-icon-tickets" plain></el-button>
                             <el-button icon="el-icon-edit" plain></el-button>
-                            <el-button icon="el-icon-delete" plain></el-button>
+                            <el-button icon="el-icon-delete" plain @click="deleteProject(project.projectId)"></el-button>
                         </el-button-group>
                   </div>
                 </el-card>
@@ -62,7 +62,7 @@ export default  {
     props: [],
 
     mounted() {
-
+        
     },
 
     data() {
@@ -94,6 +94,10 @@ export default  {
             this.projectColorInput = '#fff'
             this.createProjectDialogVisible = false
 
+        },
+
+        deleteProject(projectId) {
+            store.dispatch('deleteProject', projectId)
         },
 
         newProjectId() {

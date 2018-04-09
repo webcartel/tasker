@@ -1,7 +1,7 @@
 <template lang="html">
 
     <div class="projects">
-        <el-row>
+        <el-row :gutter="20">
 
             <el-col :span="12">
                 <el-card class="projects-card">
@@ -23,7 +23,11 @@
             </el-col>
 
             <el-col :span="12">
-              
+                <el-card class="projects-card">
+                    <div slot="header" class="clearfix projects-card-header">
+                        <span>Активность</span>
+                    </div>
+                </el-card>
             </el-col>
         </el-row>
 

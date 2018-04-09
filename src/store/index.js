@@ -1,7 +1,13 @@
 import Vue from 'vue'
 import Vuex from 'vuex'
+import VuexPersist from 'vuex-persist';
 
 Vue.use(Vuex)
+
+const vuexLocalStorage = new VuexPersist({
+  key: 'vuex',
+  storage: window.localStorage,
+})
 
 const store = new Vuex.Store({
 	state: {
@@ -28,6 +34,8 @@ const store = new Vuex.Store({
 			commit('delete', { itemId: projectId })
 		}
 	},
+
+	plugins: [vuexLocalStorage.plugin],
 })
 
 export default store

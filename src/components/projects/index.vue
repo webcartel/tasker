@@ -13,6 +13,7 @@
                   <div class="project-item" v-for="project in projectList">
                         <span class="color" v-bind:style="{ background: project.projectColor }"></span>
                         <span class="name">{{ project.projectName }}</span>
+                        <span class="date">{{ createDate(project.createTimestamp) }}</span>
                         <el-button-group>
                             <el-button icon="el-icon-tickets" plain></el-button>
                             <el-button icon="el-icon-edit" plain></el-button>
@@ -62,7 +63,7 @@ export default  {
     props: [],
 
     mounted() {
-        
+
     },
 
     data() {
@@ -101,19 +102,37 @@ export default  {
         },
 
         newProjectId() {
-            if ( this.projectList.length === undefined ) {
-                return 1
+            var maxProjectId = 0
+            if ( this.projectList.length > 0 ) {
+                this.projectList.forEach(function(item, i, arr) {
+                    if ( maxProjectId < item.projectId ) {
+                        maxProjectId = item.projectId
+                    }
+                    if ( ( arr.length - 1) === i ) {
+                        return true
+                    }
+                })
+                return maxProjectId + 1
             }
             else {
-                return this.projectList.length + 1
+                return maxProjectId + 1
             }
         },
+
+        createDate(timestamp) {
+            let dateObj = new Date(timestamp)
+            let year = dateObj.getFullYear()
+            let month = dateObj.getMonth()
+            let day = dateObj.getDate()
+            let date = year + ' ' + month + ' ' + day
+            return date
+        }
     },
 
     computed: {
         projectList() {
             return store.state.projects;
-        }
+        },
     }
 }
 
@@ -152,6 +171,11 @@ export default  {
                 display: inline-block;
                 margin: 0 auto 0 0;
                 font: 400 14px/21px 'Roboto', sans-serif;
+                vertical-align: middle;
+            }
+
+            .date {
+                font: 300 12px/21px 'Roboto', sans-serif;
                 vertical-align: middle;
             }
         }

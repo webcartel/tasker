@@ -4,7 +4,7 @@
             <el-aside></el-aside>
             <el-container>
                 <el-header>
-                    <countdown-timer timestamp="110"/>
+                    <countdown-timer/>
                 </el-header>
                 <el-main>
                     <router-view/>

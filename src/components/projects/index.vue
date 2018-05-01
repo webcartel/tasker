@@ -5,21 +5,21 @@
 
             <el-col :span="12">
                 <el-card class="projects-card">
-                  <div slot="header" class="clearfix projects-card-header">
-                      <span>Проекты</span>
-                      <el-button style="float: right; padding: 3px 0" type="text" @click="createProjectDialogVisible = true">Создать проект</el-button>
-                  </div>
-
-                  <div class="project-item" v-for="project in projectList">
-                        <span class="color" v-bind:style="{ background: project.projectColor }"></span>
-                        <span class="name">{{ project.projectName }}</span>
-                        <span class="date">{{ createDate(project.createTimestamp) }}</span>
-                        <el-button-group>
-                            <el-button icon="el-icon-tickets" plain></el-button>
-                            <el-button icon="el-icon-edit" plain></el-button>
-                            <el-button icon="el-icon-delete" plain @click="deleteProject(project.projectId)"></el-button>
-                        </el-button-group>
-                  </div>
+                    <div slot="header" class="clearfix projects-card-header">
+                        <span>Проекты</span>
+                        <el-button style="float: right; padding: 3px 0" type="text" @click="createProjectDialogVisible = true">Создать проект</el-button>
+                    </div>
+                    <div class="projects-card-body" v-loading="projectsCardLoading">
+                        <div class="project-item" v-for="project in projectList">
+                            <span class="color" v-bind:style="{ background: project.color }"></span>
+                            <span class="name">{{ project.name }}</span>
+                            <el-button-group>
+                                <el-button icon="el-icon-tickets" plain></el-button>
+                                <el-button icon="el-icon-edit" plain @click="editProject(project.id)"></el-button>
+                                <el-button icon="el-icon-delete" plain @click="deleteProject(project.id)"></el-button>
+                            </el-button-group>
+                        </div>
+                    </div>
                 </el-card>
             </el-col>
 
@@ -33,21 +33,20 @@
         </el-row>
 
         <!-- dialogs -->
-        <el-dialog
-            title="Создать проект"
-            :visible.sync="createProjectDialogVisible"
-            width="30%">
-            <el-input placeholder="Название проекта" v-model="projectNameInput" v-on:keyup.enter="createNewProject()" clearable autofocus></el-input>
-            <el-color-picker
-              v-model="projectColorInput"
-              :predefine="predefineColors">
-            </el-color-picker>
+        <el-dialog :title="createProjectDialogTitle" :visible.sync="createProjectDialogVisible" width="30%">
+            <el-input class="input" placeholder="Название проекта" v-model="projectNameInput" v-on:keyup.enter="createNewProject()" clearable autofocus></el-input>
+            <div class="input">
+                <el-color-picker v-model="projectColorInput" :predefine="predefineColors"></el-color-picker>
+                <span>Выбор цвета</span>
+            </div>
             <span slot="footer" class="dialog-footer">
                 <el-button @click="createProjectDialogVisible = false">Отмена</el-button>
-                <el-button type="primary" @click="createNewProject()">Создать проект</el-button>
+                <el-button v-if="!createProjectDialogEdit" type="primary" @click="createNewProject()">Создать проект</el-button>
+                <el-button v-if="createProjectDialogEdit" type="primary" @click="updateProject()">Сохранить проект</el-button>
             </span>
         </el-dialog>
         <!-- dialogs -->
+        
     </div>
 
 </template>
@@ -56,6 +55,7 @@
 
 <script lang="js">
 import store from '../../store/index.js'
+import axios from 'axios'
 
 export default  {
     name: 'projects',
@@ -63,42 +63,130 @@ export default  {
     props: [],
 
     mounted() {
-
+        this.getProjectList()
     },
 
     data() {
         return {
+            projectsCardLoading: false,
+
             createProjectDialogVisible: false,
+            createProjectDialogTitle: 'Создать проект',
+            createProjectDialogEdit: false,
+
+            projectIdInput: null,
             projectNameInput: '',
-            projectColorInput: '#eee',
+            projectColorInput: '#0f90ca',
             predefineColors: [
-                '#ff4500',
-                '#ff8c00',
-                '#ffd700',
-                '#90ee90',
-                '#00ced1',
-                '#1e90ff',
-                '#c71585',
+                '#EA2027',
+                '#EE5A24',
+                '#A3CB38',
+                '#1289A7',
+                '#006266',
+                '#ED4C67',
+                '#9980FA',
             ],
         }
     },
 
     methods: {
+        getProjectList() {
+            axios.get('http://tasker-api/public/api/projects/user_id/1')
+                .then(function (response) {
+                    store.dispatch('setProjectList', response.data)
+                })
+                .catch(function (error) {
+                    console.log(error);
+                });
+        },
+
         createNewProject() {
             if ( this.projectNameInput === '' ) { this.createProjectDialogVisible = false; return }
 
-            let newId = this.newProjectId()
-            let createTimestamp = new Date().getTime();
-            store.dispatch('createProject', {projectId: newId, projectName: this.projectNameInput, projectColor: this.projectColorInput, createTimestamp: createTimestamp})
+            axios.put('http://tasker-api/public/api/projects/create', {
+                user_id: store.state.userId,
+                name: this.projectNameInput,
+                color: this.projectColorInput,
+            })
+            .then(function(response) {
+                let data = JSON.parse(response.data)
+                if (data.status === true) {
+                    this.getProjectList()
+                }
+            }.bind(this))
+            .catch(function(error) {
+                console.log(error)
+            });
 
             this.projectNameInput = ''
-            this.projectColorInput = '#fff'
+            this.projectColorInput = '#0f90ca'
             this.createProjectDialogVisible = false
+        },
 
+        editProject(projectId) {
+            this.createProjectDialogVisible = true
+            this.createProjectDialogTitle = 'Редактировать проект'
+            this.createProjectDialogEdit = true
+
+            axios.get('http://tasker-api/public/api/projects/project_id/' + projectId)
+                .then(function(response) {
+                    if ( response.data.length === 1 ) {
+                        let data = response.data[0]
+                        this.projectIdInput = data.id
+                        this.projectNameInput = data.name
+                        this.projectColorInput = data.color
+                    }
+                }.bind(this))
+                .catch(function(error) {
+                    console.log(error);
+                });
+        },
+
+        updateProject() {
+            axios.post('http://tasker-api/public/api/projects/update/' + this.projectIdInput, {
+                    name: this.projectNameInput,
+                    color: this.projectColorInput,
+                    user_id: store.state.userId,
+                }).then(function(response) {
+                    let data = JSON.parse(response.data)
+                    if (data.status === true) {
+                        this.getProjectList()
+                    }
+                }.bind(this))
+                .catch(function(error) {
+                    console.log(error);
+                });
+
+                this.projectNameInput = ''
+                this.projectColorInput = '#0f90ca'
+                this.createProjectDialogVisible = false
         },
 
         deleteProject(projectId) {
-            store.dispatch('deleteProject', projectId)
+
+            this.$confirm('Удалить проект #' + projectId + ' ?', 'Предупреждение', {
+                confirmButtonText: 'OK',
+                cancelButtonText: 'Отмена',
+                type: 'warning'
+            }).then(() => {
+                this.projectsCardLoading = true
+                axios.delete('http://tasker-api/public/api/projects/delete/' + projectId)
+                    .then(function (response) {
+                        let resp = JSON.parse(response.data)
+                        if ( resp === true ) {
+                            this.getProjectList()
+                            this.projectsCardLoading = false
+                            this.$notify({title: 'Проект удален', message: 'Проект #'+ projectId +' успешно удален', duration: 5000, type: 'success'})
+                        }
+                        else {
+                            this.projectsCardLoading = false
+                            this.$notify({title: 'Ошибка', message: 'Возникла ошибка при удалении проекта #' + projectId, duration: 5000, type: 'error'})
+                        }
+                    }.bind(this))
+                    .catch(function (error) {
+                        console.log(error)
+                    })
+            })
         },
 
         newProjectId() {
@@ -119,7 +207,7 @@ export default  {
             }
         },
 
-        createDate(timestamp) {
+        formatDate(timestamp) {
             let dateObj = new Date(timestamp)
             let year = dateObj.getFullYear()
             let month = dateObj.getMonth()
@@ -173,11 +261,16 @@ export default  {
                 font: 400 14px/21px 'Roboto', sans-serif;
                 vertical-align: middle;
             }
+        }
+    }
 
-            .date {
-                font: 300 12px/21px 'Roboto', sans-serif;
-                vertical-align: middle;
-            }
+    .input {
+        display: flex;
+        align-items: center;
+        margin-bottom: 15px;
+
+        span {
+            margin-left: 15px;
         }
     }
 }

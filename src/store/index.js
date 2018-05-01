@@ -11,7 +11,8 @@ const vuexLocalStorage = new VuexPersist({
 
 const store = new Vuex.Store({
 	state: {
-		projects: []
+		projects: [],
+		userId: 1
 	},
 
 	mutations: {
@@ -19,8 +20,12 @@ const store = new Vuex.Store({
 			state.projects.push(item)
 		},
 
+		setProjectList( state, { listItems } ) {
+			state.projects = listItems
+		},
+
 		delete( state, { itemId } ) {
-			let indexToRemove = state.projects.findIndex(obj => obj.projectId == itemId)
+			let indexToRemove = state.projects.findIndex(obj => obj.id == itemId)
 			state.projects.splice(indexToRemove , 1)
 		}
 	},
@@ -28,6 +33,10 @@ const store = new Vuex.Store({
 	actions: {
 		createProject({ commit }, projectData) {
 			commit('set', { type: 'projects', item: projectData })
+		},
+
+		setProjectList({ commit }, listItems) {
+			commit('setProjectList', { listItems: listItems })
 		},
 
 		deleteProject({ commit }, projectId) {

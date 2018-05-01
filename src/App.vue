@@ -69,4 +69,22 @@ export default {
     color: #333;
 }
 
+.el-notification__title {
+    font: 500 16px/18px 'Roboto', sans-serif;
+}
+
+.el-notification__content {
+    font: 400 14px/16px 'Roboto', sans-serif;
+    text-align: left;
+}
+
+.el-message-box__title {
+    font: 500 16px/18px 'Roboto', sans-serif;
+}
+
+.el-message-box__content {
+    font: 400 14px/16px 'Roboto', sans-serif;
+    text-align: left;
+}
+
 </style>

@@ -40,11 +40,6 @@
                                     </svg>
                                 </div>
                             </div>
-                            <el-button-group>
-                                <el-button icon="el-icon-tickets" plain></el-button>
-                                <el-button icon="el-icon-edit" plain @click="editProject(project.id)"></el-button>
-                                <el-button icon="el-icon-delete" plain @click="deleteProject(project.id)"></el-button>
-                            </el-button-group>
                         </div>
                     </div>
                 </el-card>

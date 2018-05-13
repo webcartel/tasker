@@ -10,6 +10,7 @@
                         <el-button style="float: right; padding: 3px 0" type="text" @click="createTaskDialogVisible = true">Создать задачу</el-button>
                     </div>
                     <div class="tasks-card-body" v-loading="tasksCardLoading">
+
                         <el-input placeholder="Поиск" v-model="searchInput" class="input-with-select" clearable>
                             <el-select v-model="searchBy" slot="prepend" placeholder="Везде">
                                 <el-option label="По ID" value="id"></el-option>
@@ -17,10 +18,12 @@
                                 <el-option label="По тегам" value="tags"></el-option>
                             </el-select>
                         </el-input>
+                        
+                        <!-- task-item -->
                         <div class="task-item" v-for="task in taskList">
                             <span class="color" v-bind:style="{ background: task.color }"></span>
                             <span class="name">{{ task.name }}</span>
-                            <span v-if="currentTaskTime > 0 && runningTask === task.id">{{ hours }} {{ minutes }} {{ seconds }}</span>
+                            <span class="timer" v-if="currentTaskTime > 0 && runningTask === task.id">{{ hours }} : {{ minutes }} : {{ seconds }}</span>
                             <div class="button-group">
                                 <div class="button" @click="runTimer(task.id)" v-if="runningTask != task.id">
                                     <svg fill="#000000" height="24" viewBox="0 0 24 24" width="24" xmlns="http://www.w3.org/2000/svg">
@@ -54,6 +57,8 @@
                                 </div>
                             </div>
                         </div>
+                        <!-- /task-item -->
+
                     </div>
                 </el-card>
             </el-col>
@@ -63,7 +68,34 @@
                     <div slot="header" class="clearfix tasks-card-header">
                         <span>Активность</span>
                     </div>
-                    <div class="log" v-for="logItem in tasksTimeLog">{{ logItem.taskId }} ---- {{ logItem.time }}</div>
+                    <div class="tasks-card-body">
+                        <el-tabs v-model="activityCurrentTab" @tab-click="">
+                            <el-tab-pane label="История" name="history">
+                                <div class="tasklog" v-for="logItem in tasksLog">
+                                    <span class="id">#{{ logItem.taskId }}</span>
+                                    <span class="hours"><span v-if="logItem.time.hours">{{ logItem.time.hours }}h</span></span>
+                                    <span class="minutes"><span v-if="logItem.time.minutes">{{ logItem.time.minutes }}m</span></span>
+                                    <span class="seconds"><span v-if="logItem.time.seconds">{{ logItem.time.seconds }}s</span></span>
+                                    <span></span>
+                                </div>
+                            </el-tab-pane>
+                            <el-tab-pane label="Сегодня" name="today">
+                                <div class="day-total-time">
+                                    <span class="hours"><span>{{ dayTotalTime.hours }}</span>h</span>
+                                    <span class="minutes"><span>{{ dayTotalTime.minutes }}</span>m</span>
+                                    <span class="seconds"><span>{{ dayTotalTime.seconds }}</span>s</span>
+                                </div>
+                                <div class="tasklog-total-time" v-for="logItem in tasksLogTotalTime">
+                                    <!-- <span class="id">#{{ logItem.taskId }}</span> -->
+                                    <span class="name">{{ logItem.name }}</span>
+                                    <span class="hours"><span v-if="logItem.time.hours">{{ logItem.time.hours }}h</span></span>
+                                    <span class="minutes"><span v-if="logItem.time.minutes">{{ logItem.time.minutes }}m</span></span>
+                                    <span class="seconds"><span v-if="logItem.time.seconds">{{ logItem.time.seconds }}s</span></span>
+                                    <el-progress :percentage="logItem.percent" :color="logItem.color"></el-progress>
+                                </div>
+                            </el-tab-pane>
+                        </el-tabs>
+                    </div>
                 </el-card>
             </el-col>
         </el-row>
@@ -75,7 +107,7 @@
                 <el-color-picker v-model="taskColorInput" :predefine="predefineColors"></el-color-picker>
                 <span>Выбор цвета</span>
             </div>
-            <el-input type="textarea" :rows="5" placeholder="Please input" v-model="taskDescriptionInput"></el-input>
+            <el-input type="textarea" :rows="5" placeholder="Описание задачи" v-model="taskDescriptionInput"></el-input>
             <span slot="footer" class="dialog-footer">
                 <el-button @click="createTaskDialogVisible = false">Отмена</el-button>
                 <el-button v-if="!createTaskDialogEdit" type="primary" @click="createNewTask()">Создать задачу</el-button>
@@ -132,6 +164,8 @@ export default  {
             timer: null,
             tasksTimeLog: [],
 
+            activityCurrentTab: 'history',
+
             // Search
             searchInput: '',
             searchBy: '',
@@ -140,7 +174,7 @@ export default  {
 
     methods: {
         getTasksList() {
-            axios.get('http://tasker-api/public/api/tasks/user/'+store.state.userId+'/project/1')
+            axios.get('http://tasker-api/public/api/tasks/user/'+ store.state.userId +'/project/'+ this.$route.params.project_id)
                 .then(function (response) {
                     store.dispatch('setTaskList', response.data)
                 })
@@ -156,14 +190,16 @@ export default  {
             if ( this.taskNameInput === '' ) { this.createTaskDialogVisible = false; return }
 
             axios.put('http://tasker-api/public/api/tasks/create', {
+                project_id: this.$route.params.project_id,
                 user_id: store.state.userId,
                 name: this.taskNameInput,
+                description: this.taskDescriptionInput,
                 color: this.taskColorInput,
             })
             .then(function(response) {
                 let data = JSON.parse(response.data)
                 if (data.status === true) {
-                    this.getTaskList()
+                    this.getTasksList()
                 }
             }.bind(this))
             .catch(function(error) {
@@ -186,6 +222,7 @@ export default  {
                         this.taskIdInput = data.id
                         this.taskNameInput = data.name
                         this.taskColorInput = data.color
+                        this.taskDescriptionInput = data.description
                         this.createTaskDialogVisible = true
                     }
                 }.bind(this))
@@ -199,13 +236,15 @@ export default  {
 
         updateTask() {
             axios.post('http://tasker-api/public/api/tasks/update/' + this.taskIdInput, {
-                    name: this.taskNameInput,
-                    color: this.taskColorInput,
+                    project_id: this.$route.params.project_id,
                     user_id: store.state.userId,
+                    name: this.taskNameInput,
+                    description: this.taskDescriptionInput,
+                    color: this.taskColorInput,
                 }).then(function(response) {
                     let data = JSON.parse(response.data)
                     if (data.status === true) {
-                        this.getTaskList()
+                        this.getTasksList()
                     }
                 }.bind(this))
                 .catch(function(error) {
@@ -229,9 +268,9 @@ export default  {
                     .then(function (response) {
                         let resp = JSON.parse(response.data)
                         if ( resp === true ) {
-                            this.getTaskList()
+                            this.getTasksList()
                             this.tasksCardLoading = false
-                            this.$notify({title: 'Проект удален', message: 'Проект #'+ taskId +' успешно удален', duration: 5000, type: 'success'})
+                            this.$notify({title: 'Задача удалена', message: 'Задача #'+ taskId +' успешно удалена', duration: 5000, type: 'success'})
                         }
                         else {
                             this.tasksCardLoading = false
@@ -256,12 +295,12 @@ export default  {
                 this.startTime = Date.now()
 
                 this.timer = setInterval(function() {
-                    this.days = Math.floor( (this.currentTaskTime/60/60) / 24);
-                    this.hours = Math.floor(this.currentTaskTime/60/60);
-                    this.minutes = Math.floor((this.currentTaskTime - this.hours * 60 * 60) / 60);
-                    this.seconds = Math.floor(this.currentTaskTime - this.hours * 60 * 60 - this.minutes * 60);
+                    this.days = this.setZero(Math.floor( (this.currentTaskTime/60/60) / 24));
+                    this.hours = this.setZero(Math.floor(this.currentTaskTime/60/60));
+                    this.minutes = this.setZero(Math.floor((this.currentTaskTime - this.hours * 60 * 60) / 60));
+                    this.seconds = this.setZero(Math.floor(this.currentTaskTime - this.hours * 60 * 60 - this.minutes * 60));
                     this.currentTaskTime++
-                }.bind(this), 1000)
+                }.bind(this), 10)
             }
             // Stop
             else if ( this.runningTask === taskId ) {
@@ -270,12 +309,12 @@ export default  {
                 clearInterval(this.timer)
 
                 this.stopTime = Date.now()
-                this.tasksTimeLog.push({taskId: taskId, startTime: this.startTime, stopTime: this.stopTime, time: this.getTime(this.startTime, this.stopTime)})
+                this.tasksTimeLogSave({taskId: taskId, startTime: this.startTime, stopTime: this.stopTime, time: this.getTimeFromRange(this.startTime, this.stopTime)})
             }
             // Switch
             else if ( this.runningTask != null && this.runningTask != taskId ) {
                 this.stopTime = Date.now()
-                this.tasksTimeLog.push({taskId: this.runningTask, startTime: this.startTime, stopTime: this.stopTime, time: this.getTime(this.startTime, this.stopTime)})
+                this.tasksTimeLogSave({taskId: this.runningTask, startTime: this.startTime, stopTime: this.stopTime, time: this.getTimeFromRange(this.startTime, this.stopTime)})
                 this.startTime = Date.now()
 
                 this.runningTask = taskId
@@ -283,27 +322,54 @@ export default  {
                 clearInterval(this.timer)
 
                 this.timer = setInterval(function() {
-                    this.days = Math.floor( (this.currentTaskTime/60/60) / 24);
-                    this.hours = Math.floor(this.currentTaskTime/60/60);
-                    this.minutes = Math.floor((this.currentTaskTime - this.hours * 60 * 60) / 60);
-                    this.seconds = Math.floor(this.currentTaskTime - this.hours * 60 * 60 - this.minutes * 60);
+                    this.days = this.setZero(Math.floor( (this.currentTaskTime/60/60) / 24));
+                    this.hours = this.setZero(Math.floor(this.currentTaskTime/60/60));
+                    this.minutes = this.setZero(Math.floor((this.currentTaskTime - this.hours * 60 * 60) / 60));
+                    this.seconds = this.setZero(Math.floor(this.currentTaskTime - this.hours * 60 * 60 - this.minutes * 60));
                     this.currentTaskTime++
-                }.bind(this), 1000)
+                }.bind(this), 10)
             }
         },
 
-        getTime( start, stop ) {
-            let diff = Math.round((stop - start) / 1000)
+        tasksTimeLogSave(tasksLogItem) {
+            store.dispatch('tasksLogSave', tasksLogItem)
+        },
+
+        getTimeFromRange( start, stop ) {
+            let diff = Math.round((stop - start) / 10)
             let days = Math.floor( (diff/60/60) / 24);
             let hours = Math.floor(diff/60/60);
             let minutes = Math.floor((diff - hours * 60 * 60) / 60);
             let seconds = Math.floor(diff - hours * 60 * 60 - minutes * 60);
 
-            let str = ''
-            if ( hours > 0  ) { str += hours +'h ' }
-            if ( minutes > 0  ) { str += minutes +'m ' }
-            if ( seconds > 0  ) { str += seconds +'s ' }
-            return str
+            let result = {}
+            result.hours = hours
+            result.minutes = minutes
+            result.seconds = seconds
+            return result
+        },
+
+        getTimeFromTimestamp(timestamp) {
+            let time = Math.round(timestamp / 10)
+            let days = Math.floor( (time/60/60) / 24);
+            let hours = Math.floor(time/60/60);
+            let minutes = Math.floor((time - hours * 60 * 60) / 60);
+            let seconds = Math.floor(time - hours * 60 * 60 - minutes * 60);
+
+            let result = {}
+            result.hours = hours
+            result.minutes = minutes
+            result.seconds = seconds
+            return result
+        },
+
+        setZero(input) {
+            if ( input > 9 ) {
+                return input
+            }
+            else {
+                return '0' + input
+            }
         },
     },
 
@@ -321,6 +387,36 @@ export default  {
                 }.bind(this))
                 return list
             }
+        },
+
+        tasksLog() {
+            return store.state.tasksLog;
+        },
+
+        tasksLogTotalTime() {
+            var totalTime = 0
+            var items = store.getters.getTodayTaskTime
+            for (var i = 0; i < items.length; i++) {
+                totalTime += items[i].time
+            }
+            return store.getters.getTodayTaskTime.map(function(item) {
+                let percent = Math.floor(item.time / totalTime * 100)
+
+                let thisTask = store.state.tasks.filter(function(task) {
+                    if (item.taskId === task.id) { return true }
+                })
+
+                return { taskId: item.taskId, name: thisTask[0].name, time: this.getTimeFromTimestamp(item.time), percent: percent, color: thisTask[0].color }
+            }.bind(this))
+        },
+
+        dayTotalTime() {
+            var totalTime = 0
+            var items = store.getters.getTodayTaskTime
+            for (var i = 0; i < items.length; i++) {
+                totalTime += items[i].time
+            }
+            return this.getTimeFromTimestamp(totalTime)
         },
     }
 }
@@ -390,6 +486,11 @@ export default  {
                     vertical-align: middle;
                 }
 
+                .timer {
+                    margin: 0 15px 0 0;
+                    font: 400 21px/21px 'Roboto', sans-serif;
+                }
+
                 .button-group {
                     display: flex;
 
@@ -426,6 +527,92 @@ export default  {
                                 fill: #0f90ca;
                             }
                         }
+                    }
+                }
+            }
+
+            .tasklog {
+                display: table;
+                width: 100%;
+                border-bottom: 1px solid #e4e7ed;
+
+                &:last-of-type {
+                    border-bottom: none;
+                }
+
+                &:hover {
+                    background: #e4e7ed + 15;
+                }
+
+                & > span {
+                    display: table-cell;
+                    padding: 10px 0;
+                    font: 400 15px/15px 'Roboto', sans-serif;
+
+                    &.id {
+                        width: 50px;
+                        font: 400 12px/12px 'Roboto', sans-serif;
+                        color: #999;
+                    }
+                    &.name {
+                        width: 75px;
+                        font: 400 12px/12px 'Roboto', sans-serif;
+                        color: #999;
+                    }
+                    &.hours {
+                        width: 30px;
+                    }
+                    &.minutes {
+                        width: 40px;
+                    }
+                    &.seconds {
+                        width: 40px;
+                        font: 400 12px/12px 'Roboto', sans-serif;
+                        color: #999;
+                    }
+
+                    & > span {
+
+                    }
+                }
+            }
+
+            .tasklog-total-time {
+                @extend .tasklog;
+            }
+
+            .day-total-time {
+                padding: 15px;
+                border-bottom: 1px solid #e4e7ed;
+
+                & > span {
+                    margin-right: 10px;
+
+                    &:last-of-type {
+                        margin-right: 0;
+                    }
+                }
+
+                .hours {
+                    font: 400 12px/12px 'Roboto', sans-serif;
+
+                    & > span {
+                        font: 400 20px/20px 'Roboto', sans-serif;
+                    }
+                }
+                .minutes {
+                    font: 400 12px/12px 'Roboto', sans-serif;
+
+                    & > span {
+                        font: 400 20px/20px 'Roboto', sans-serif;
+                    }
+                }
+                .seconds {
+                    font: 400 12px/12px 'Roboto', sans-serif;
+                    color: #999;
+
+                    & > span {
+                        font: 400 15px/15px 'Roboto', sans-serif;
                     }
                 }
             }

@@ -18,6 +18,9 @@ import { Dialog,
 	Loading,
 	MessageBox,
 	Notification,
+	Tabs,
+	TabPane,
+	Progress,
 	Button,
 	ButtonGroup,
 } from 'element-ui'
@@ -42,6 +45,9 @@ Vue.use(Row)
 Vue.use(Col)
 Vue.use(Card)
 Vue.use(Loading)
+Vue.use(Tabs)
+Vue.use(TabPane)
+Vue.use(Progress)
 Vue.use(Button)
 Vue.use(ButtonGroup)
 locale.use(lang)

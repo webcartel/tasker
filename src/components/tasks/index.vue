@@ -72,7 +72,8 @@
                         <el-tabs v-model="activityCurrentTab" @tab-click="">
                             <el-tab-pane label="История" name="history">
                                 <div class="tasklog" v-for="logItem in tasksLog">
-                                    <span class="id">#{{ logItem.taskId }}</span>
+                                    <!-- <span class="id">#{{ logItem.taskId }}</span> -->
+                                    <span class="id">{{ logItem.name }}</span>
                                     <span class="hours"><span v-if="logItem.time.hours">{{ logItem.time.hours }}h</span></span>
                                     <span class="minutes"><span v-if="logItem.time.minutes">{{ logItem.time.minutes }}m</span></span>
                                     <span class="seconds"><span v-if="logItem.time.seconds">{{ logItem.time.seconds }}s</span></span>
@@ -164,7 +165,7 @@ export default  {
             timer: null,
             tasksTimeLog: [],
 
-            activityCurrentTab: 'history',
+            activityCurrentTab: 'today',
 
             // Search
             searchInput: '',
@@ -390,7 +391,14 @@ export default  {
         },
 
         tasksLog() {
-            return store.state.tasksLog;
+            var items = store.state.tasksLog
+            return items.map(function(item) {
+                let thisTask = store.state.tasks.filter(function(task) {
+                    if (item.taskId === task.id) { return true }
+                })
+                item.name = thisTask[0].name
+                return item
+            }.bind(this))
         },
 
         tasksLogTotalTime() {

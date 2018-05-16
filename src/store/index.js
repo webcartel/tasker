@@ -20,19 +20,26 @@ const store = new Vuex.Store({
 
 	getters: {
 		getTodayTaskTime: function(state) {
+			let today = new Date();
+			let year = today.getFullYear()
+			let month = today.getMonth()
+			let day = today.getDate()
+			var day_start = new Date(year, month, day, 0, 0, 0, 0).getTime()
+			var day_end = new Date(year, month, day, 23, 59, 59, 59).getTime()
+
 			var log = state.tasksLog
 			var spentIds = []
 
 			var resultArr = []
 			for (var i = 0; i < log.length; i++) {
 				var logItem = log[i]
-
-				if ( spentIds.indexOf(logItem.taskId) == -1 ) {
+				if ( spentIds.indexOf(logItem.taskId) == -1 && logItem.startTime >= day_start && logItem.stopTime <= day_end ) {
 					var taskObj = {}
 					var summ = 0
 					for (let i = 0; i < log.length; i++) {
-						if ( logItem.taskId === log[i].taskId ) {
+						if ( logItem.taskId === log[i].taskId && log[i].startTime >= day_start && log[i].stopTime <= day_end ) {
 							summ += log[i].stopTime - log[i].startTime
+							console.log(summ)
 							taskObj = { taskId: logItem.taskId, time: summ }
 						}
 					}
